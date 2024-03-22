@@ -125,6 +125,51 @@ void display_candidate(int n)
      fclose(candidateFile);
 }
 
+void call_menu(struct candidate *can , int n){
+     
+     int choice;
+
+     menu:
+          printf("To Print Candidates Informatio , Enter 1: \n");
+          printf("To Remove The Candidates Who Does Not Have %s Skill, Enter 2: \n" , can->skills);
+          printf("To Sort The Candidates As Per The Experience Greater Than %d , Enter 3: \n" , can->experience);
+          printf("To Display Who Have A Recommendation Letter , Enter 4: \n");
+          printf("To Add More Candidates , Enter 5: \n");
+          printf("To Get Final List , Enter 6: \n");
+          printf("To Exit , Enter 7: \n");
+
+          printf("Enter Your Choice : ");
+          scanf("%d", &choice);
+
+          switch (choice)
+          {
+          case 1:
+               display_candidate(n);
+               goto menu;
+          case 2:
+               remove_skill();
+               goto menu;
+          case 3:
+               sort_exp();
+               goto menu;
+          case 4:
+               is_recommmend();
+               goto menu;
+          case 5:
+               add();
+               goto menu;
+          case 6:
+               final_list();
+               return;
+          case 7:
+               return;
+          default:
+               remove_skill();
+               sort_exp();
+               final_list();
+          }
+}
+
 int main()
 {
      struct Interview interv;
@@ -137,8 +182,8 @@ int main()
      scanf("%d", &n);
      struct candidate *can = malloc(n * sizeof(struct candidate));
      take_input_candidate(n, can);
-     display_candidate(n);
 
+     call_menu(&interv , n);
      free(can);
 
      return 0;
