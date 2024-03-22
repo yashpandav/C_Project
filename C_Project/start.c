@@ -12,8 +12,8 @@ struct Interview
 
 struct candidate
 {
+     int id;
      char name[20];
-     int year;
      int age;
      char degree[20];
      int experience;
@@ -77,22 +77,62 @@ void display_interview(struct Interview interv){
      ! INPUT_CANDIDATE
      */
 
-void take_input_candidate(){
-     int n;
-     printf("How Many Candidates Wants To Apply : %d\n", n);
-     
-     struct candidate can[n];
-     FILE* candp = fopen("candidates.txt", "w");
 
-     if(candp == NULL){
+void take_input_candidate(int n , struct candidate* canp){
+     FILE* candidateFile = fopen("candidates.txt", "w");
+
+     if(candidateFile == NULL){
           perror("Couldn't open candidate file");
           return;
      }
 
      for(int i = 0; i < n; i++){
-          printf()
+          printf("Enter The Id Of %d Candidate : " , i+1);
+          scanf("%d", (canp+i)->id);
+          printf("Enter The Name Of %d Candidate : " , i+1);
+          scanf("%s", (canp+i)->name);
+          printf("Enter The Age Of %d Candidate : " , i+1);
+          scanf("%d", (canp+i)->age);
+          printf("Enter The Degree Of %d Candidate : " , i+1);
+          scanf("%s", (canp+i)->degree);
+          printf("Enter The Experience Of %d Candidate : " , i+1);
+          scanf("%d", (canp+i)->experience);
+          printf("Enter The Skills Of %d Candidate : " , i+1);
+          scanf("%s", (canp+i)->skills);
+          printf("Have you A Recomendation Letter , If Yes Then Enter 1 Else Enter 0 : ");
+          scanf("%d", (canp+i)->recomendations);
+
+          fwrite((canp+i) , sizeof(struct candidate) , 1 , candidateFile);
      }
      return;
+}
+
+
+     /*
+     ! DISPLAY_CANDIDATE
+     */
+
+void display_candidate(int n , struct candidate* canp){
+     FILE* candidateFile = fopen("candidates.txt", "r");
+     
+     if(candidateFile == NULL){
+          perror("Couldn't open candidate file");
+          return;
+     }
+
+     while (fread(canp , sizeof(struct candidate), 1, candidateFile)){
+          printf("ID : %d\n", canp->id);
+          printf("Name : %s\n", canp->name);
+          printf("Age : %d\n", canp->age);
+          printf("Degree : %s\n", canp->degree);
+          printf("Experience : %d\n", canp->experience);
+          printf("Skills : %s\n", canp->skills);
+          printf("Recomendation Letter : %d\n", canp->recomendations);
+          printf("\n");
+     }     
+     fclose(candidateFile);
+     return;
+
 }
 
 int main(){
@@ -101,10 +141,14 @@ int main(){
      */
      struct Interview interv;
 
-     take_input_interview(interv);
-     display_interview(interv);
-     take_input_candidate();
-
+     // take_input_interview(interv);
+     // display_interview(interv);
+     int n;
+     printf("How Many Candidates Wants To Apply : ");
+     scanf("%d", &n);
+     struct candidate can[n];
+     take_input_candidate(n , &can[0]);
+     display_candidate(n , &can[0]);
 
      return 0;
 }
