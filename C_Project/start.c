@@ -32,32 +32,12 @@ void experience(struct candidate *can, int n);
 int get_experience(int experience);
 void remove_experience();
 void sort_experience(struct candidate *can, int n);
-
-int main()
-{
-     struct Interview interv;
-
-     take_input_interview(&interv);
-     display_interview();
-
-     int n;
-     printf("How Many Candidates Want To Apply: ");
-     scanf("%d", &n);
-
-     struct candidate *can = malloc(n * sizeof(struct candidate));
-     if (can == NULL)
-     {
-          perror("Memory allocation failed\n");
-          return 1;
-     }
-
-     take_input_candidate(n, can);
-
-     call_menu(can, interv, n);
-     free(can);
-
-     return 0;
-}
+void add();
+void add_candidate(int c);
+void is_available(int id);
+void update(struct candidate can);
+void get_recomendation();
+void get_final_list();
 
 void take_input_interview(struct Interview *interv)
 {
@@ -96,7 +76,7 @@ void display_interview()
 
 void take_input_candidate(int n, struct candidate *can)
 {
-     FILE *candidateFile = fopen("candidates.txt", "w");
+     FILE *candidateFile = fopen("candidate.txt", "w");
      if (candidateFile == NULL)
      {
           perror("Couldn't open candidate file");
@@ -126,7 +106,7 @@ void take_input_candidate(int n, struct candidate *can)
 
 void display_candidate()
 {
-     FILE *candidateFile = fopen("candidates.txt", "r");
+     FILE *candidateFile = fopen("candidate.txt", "r");
      if (candidateFile == NULL)
      {
           perror("Couldn't open candidate file");
@@ -166,7 +146,7 @@ int get_skill(char skill[50])
 
 void remove_skill()
 {
-     FILE *candidateFile = fopen("candidates.txt", "r");
+     FILE *candidateFile = fopen("candidate.txt", "r");
      FILE *allcandidateFile = fopen("allCandidate.txt", "w");
      FILE *temp = fopen("temp.txt", "w");
 
@@ -191,7 +171,7 @@ void remove_skill()
      fclose(temp);
      fclose(allcandidateFile);
 
-     candidateFile = fopen("candidates.txt", "w");
+     candidateFile = fopen("candidate.txt", "w");
      temp = fopen("temp.txt", "r");
 
      if (candidateFile == NULL || temp == NULL)
@@ -211,39 +191,48 @@ void remove_skill()
 int get_experience(int experience)
 {
      FILE *interviewFile = fopen("interview.txt", "r");
-
      if (interviewFile == NULL)
      {
-          perror("Couldn't open File");
+          perror("Couldn't open interview file");
+          return 0; // Indicate failure
      }
 
      struct Interview interv;
-
      while (fread(&interv, sizeof(struct Interview), 1, interviewFile))
      {
           if (experience < interv.experience)
           {
                fclose(interviewFile);
-               return 0;
+               return 0; // Indicate experience requirement not met
           }
      }
+
      fclose(interviewFile);
-     return 1;
+     return 1; // Indicate experience requirement met
 }
 
 void remove_experience()
 {
-     FILE *candidateFile = fopen("candidates.txt", "r");
-     FILE *tempFile = fopen("temp.txt", "w");
+     FILE *candidateFile = fopen("candidate.txt", "r+");
+     if (candidateFile == NULL)
+     {
+          perror("Couldn't open candidate file");
+          return;
+     }
 
-     if (tempFile == NULL || candidateFile == NULL)
-          perror("File Couldn't be opened");
+     FILE *tempFile = fopen("temp.txt", "w");
+     if (tempFile == NULL)
+     {
+          perror("Couldn't open temp file");
+          fclose(candidateFile);
+          return;
+     }
 
      struct candidate can;
 
      while (fread(&can, sizeof(struct candidate), 1, candidateFile))
      {
-          if (get_experience(can.experience))
+          if (!get_experience(can.experience))
           {
                fwrite(&can, sizeof(struct candidate), 1, tempFile);
           }
@@ -253,17 +242,26 @@ void remove_experience()
      fclose(candidateFile);
 
      candidateFile = fopen("candidate.txt", "w");
-     tempFile = fopen("temp.txt", "r");
+     if (candidateFile == NULL)
+     {
+          perror("Couldn't open candidate file");
+          return;
+     }
 
-     if (tempFile == NULL || candidateFile == NULL)
-          perror("File Couldn't be opened");
+     tempFile = fopen("temp.txt", "r");
+     if (tempFile == NULL)
+     {
+          perror("Couldn't open temp file");
+          fclose(candidateFile);
+          return;
+     }
 
      struct candidate tmp;
-
      while (fread(&tmp, sizeof(struct candidate), 1, tempFile))
      {
           fwrite(&tmp, sizeof(struct candidate), 1, candidateFile);
      }
+
      fclose(tempFile);
      fclose(candidateFile);
 }
@@ -272,7 +270,7 @@ void sort_experience(struct candidate *can, int n)
 {
      for (int i = 0; i < n - 1; i++)
      {
-          for (int j = 0; j < n; j++)
+          for (int j = i + 1; j < n; j++)
           {
                if (can[i].experience > can[j].experience)
                {
@@ -282,40 +280,189 @@ void sort_experience(struct candidate *can, int n)
                }
           }
      }
-     FILE *candidateFile = fopen("candidate.txt", "r");
-     FILE *temp = fopen("temp.txt", "w");
-     if (candidateFile == NULL || temp == NULL)
-          perror("File Couldn't be opened");
-
-     struct candidate tmp;
-     struct candidate cand;
-
-     while (fread(&cand, sizeof(struct candidate), 1, candidateFile))
-     {
-          fwrite(&cand, sizeof(struct candidate), 1, temp);
-     }
-
-     fclose(candidateFile);
-     fclose(temp);
-
      FILE *candidateFile = fopen("candidate.txt", "w");
-     FILE *temp = fopen("temp.txt", "r");
-     if (candidateFile == NULL || temp == NULL)
-          perror("File Couldn't be opened");
-
-     while (fread(&temp, sizeof(struct candidate), 1, temp))
+     if (candidateFile == NULL)
      {
-          fwrite(&temp, sizeof(struct candidate), 1, candidateFile);
+          perror("Couldn't open candidate file");
+          return;
+     }
+
+     for (int i = 0; i < n; i++)
+     {
+          fwrite(&can[i], sizeof(struct candidate), 1, candidateFile);
      }
 
      fclose(candidateFile);
-     fclose(temp);
 }
 
 void experience(struct candidate *can, int n)
 {
      remove_experience();
      sort_experience(can, n);
+}
+
+void update(struct candidate can)
+{
+     FILE *maincandidateFile = fopen("candidate.txt", "a");
+     fwrite(&can, sizeof(struct candidate), 1, maincandidateFile);
+     fclose(maincandidateFile);
+     return;
+}
+
+void is_available(int id)
+{
+     FILE *candidateFile = fopen("allCandidate.txt", "r");
+
+     struct candidate can;
+
+     while (fread(&can, sizeof(struct candidate), 1, candidateFile))
+     {
+          if (can.id == id)
+          {
+               update(can);
+               fclose(candidateFile);
+               return;
+          }
+     }
+
+     fclose(candidateFile);
+     printf("Candidate %d is not available", id);
+     return;
+}
+
+void add_as_per_recomendation(int id)
+{
+     FILE *candidateFile = fopen("allCandidate.txt", "r");
+
+     struct candidate can;
+
+     while (fread(&can, sizeof(struct candidate), 1, candidateFile))
+     {
+          if (can.id == id && can.recomendations == 1)
+          {
+               update(can);
+               fclose(candidateFile);
+               return;
+          }
+     }
+
+     fclose(candidateFile);
+     printf("Candidate %d is not available Or the %d does not have recomendation letter\n", id, id);
+     return;
+}
+
+void add_candidate(int c)
+{
+     printf("\n");
+     int id;
+     printf("Enter The ID Of The Candidate That You Want to Add\n");
+     scanf("%d", &id);
+
+     if (c == 0)
+          is_available(id);
+     else
+          add_as_per_recomendation(id);
+}
+
+void get_recomendation()
+{
+     FILE *candidateFile = fopen("allCandidate.txt", "r");
+
+     if (candidateFile == NULL)
+          perror("File Couldn't be opened");
+
+     struct candidate can;
+
+     int count = 0;
+
+     while (fread(&can, sizeof(struct candidate), 1, candidateFile))
+     {
+          if (can.recomendations == 1)
+          {
+               count++;
+               printf("ID: %d\n", can.id);
+               printf("Name: %s\n", can.name);
+               printf("Age: %d\n", can.age);
+               printf("Degree: %s\n", can.degree);
+               printf("Experience: %d\n", can.experience);
+               printf("Skills: %s\n", can.skills);
+               printf("Recommendation Letter: %d\n", can.recomendations);
+               printf("\n");
+          }
+     }
+
+     if (count == 0)
+          printf("\nNO ONE HAVE A RECOMENDATION LETTER\n");
+     else
+          add_candidate(1);
+     fclose(candidateFile);
+}
+
+void add()
+{
+     FILE *candidateFile = fopen("allCandidate.txt", "r");
+
+     if (candidateFile == NULL)
+          perror("File Couldn't be opened");
+
+     struct candidate can;
+     while (fread(&can, sizeof(struct candidate), 1, candidateFile))
+     {
+          printf("ID: %d\n", can.id);
+          printf("Name: %s\n", can.name);
+          printf("Age: %d\n", can.age);
+          printf("Degree: %s\n", can.degree);
+          printf("Experience: %d\n", can.experience);
+          printf("Skills: %s\n", can.skills);
+          printf("Recommendation Letter: %d\n", can.recomendations);
+          printf("\n");
+     }
+     fclose(candidateFile);
+
+     int choice;
+menu:
+     printf("1 => To Add Any Candidate\n");
+     printf("2 => To Add Candidate Who Have A Recomendation Letter\n");
+     printf("3 => To Cancel\n");
+
+     printf("Enter Your Choice : ");
+     scanf("%d", &choice);
+
+     switch (choice)
+     {
+     case 1:
+          add_candidate(0);
+          goto menu;
+     case 2:
+          get_recomendation();
+          goto menu;
+     case 3:
+          return;
+     default:
+          break;
+     }
+}
+
+void get_final_list()
+{
+     FILE *candidateFile = fopen("candidate.txt", "r");
+     if (candidateFile == NULL)
+          perror("File could not be opened");
+
+     struct candidate can;
+
+     while (fread(&can, sizeof(struct candidate), 1, candidateFile))
+     {
+          printf("ID: %d\n", can.id);
+          printf("Name: %s\n", can.name);
+          printf("Age: %d\n", can.age);
+          printf("Degree: %s\n", can.degree);
+          printf("Experience: %d\n", can.experience);
+          printf("Skills: %s\n", can.skills);
+          printf("Recommendation Letter: %d\n", can.recomendations);
+          printf("\n");
+     }
+     fclose(candidateFile);
 }
 
 void call_menu(struct candidate *can, struct Interview interv, int n)
@@ -326,10 +473,9 @@ void call_menu(struct candidate *can, struct Interview interv, int n)
           printf("\n1. Print Candidates Information\n");
           printf("2. Remove Candidates Who Do Not Have %s Skill\n", interv.require);
           printf("3. Sort Candidates by Experience Greater Than %d\n", interv.experience);
-          printf("4. Display Candidates With a Recommendation Letter\n");
-          printf("5. Add More Candidates\n");
-          printf("6. Get Final List\n");
-          printf("7. Exit\n");
+          printf("4. Add More Candidates\n");
+          printf("5. Get Final List\n");
+          printf("6. Exit\n");
 
           printf("Enter Your Choice: ");
           scanf("%d", &choice);
@@ -347,19 +493,43 @@ void call_menu(struct candidate *can, struct Interview interv, int n)
                experience(can, n);
                break;
           case 4:
-               // Implement is_recommend function
+               add();
                break;
           case 5:
-               // Implement add function
+               get_final_list();
                break;
           case 6:
-               // Implement final_list function
-               break;
-          case 7:
+               return;
                break;
           default:
                printf("Invalid choice! Please try again.\n");
                break;
           }
      } while (choice != 7);
+}
+
+int main()
+{
+     struct Interview interv;
+
+     take_input_interview(&interv);
+     display_interview();
+
+     int n;
+     printf("How Many Candidates Want To Apply: ");
+     scanf("%d", &n);
+
+     struct candidate *can = malloc(n * sizeof(struct candidate));
+     if (can == NULL)
+     {
+          perror("Memory allocation failed\n");
+          return 1;
+     }
+
+     take_input_candidate(n, can);
+
+     call_menu(can, interv, n);
+     free(can);
+
+     return 0;
 }
