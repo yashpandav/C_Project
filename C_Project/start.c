@@ -37,7 +37,8 @@ void add_candidate(int c);
 void is_available(int id);
 void update(struct candidate can);
 void get_recomendation();
-void get_final_list();
+void get_final_list(struct Interview interv);
+void delete_candidate();
 
 void take_input_interview(struct Interview *interv)
 {
@@ -232,7 +233,7 @@ void remove_experience()
 
      while (fread(&can, sizeof(struct candidate), 1, candidateFile))
      {
-          if (!get_experience(can.experience))
+          if (get_experience(can.experience))
           {
                fwrite(&can, sizeof(struct candidate), 1, tempFile);
           }
@@ -240,7 +241,6 @@ void remove_experience()
 
      fclose(tempFile);
      fclose(candidateFile);
-
      candidateFile = fopen("candidate.txt", "w");
      if (candidateFile == NULL)
      {
@@ -256,10 +256,10 @@ void remove_experience()
           return;
      }
 
-     struct candidate tmp;
-     while (fread(&tmp, sizeof(struct candidate), 1, tempFile))
+     struct candidate temp;
+     while (fread(&temp, sizeof(struct candidate), 1, tempFile))
      {
-          fwrite(&tmp, sizeof(struct candidate), 1, candidateFile);
+          fwrite(&temp, sizeof(struct candidate), 1, candidateFile);
      }
 
      fclose(tempFile);
@@ -270,16 +270,17 @@ void sort_experience(struct candidate *can, int n)
 {
      for (int i = 0; i < n - 1; i++)
      {
-          for (int j = i + 1; j < n; j++)
+          for (int j = i + 1; j < n ; j++)
           {
-               if (can[i].experience > can[j].experience)
+               if (can[i].experience < can[j].experience)
                {
-                    struct candidate t = can[i];
-                    can[i] = can[j];
-                    can[j] = t;
+                    struct candidate temp = can[j];
+                    can[j] = can[i];
+                    can[i] = temp;
                }
           }
      }
+
      FILE *candidateFile = fopen("candidate.txt", "w");
      if (candidateFile == NULL)
      {
@@ -297,8 +298,8 @@ void sort_experience(struct candidate *can, int n)
 
 void experience(struct candidate *can, int n)
 {
-     remove_experience();
      sort_experience(can, n);
+     remove_experience();
 }
 
 void update(struct candidate can)
@@ -443,7 +444,14 @@ menu:
      }
 }
 
-void get_final_list()
+void delete_candidate(){
+     int id;
+     printf("\nEnter The id of the candidate to delete : ");
+     scanf("%d", &id);
+     is_available(id);
+}
+
+void get_final_list(struct Interview interv)
 {
      FILE *candidateFile = fopen("candidate.txt", "r");
      if (candidateFile == NULL)
@@ -451,16 +459,43 @@ void get_final_list()
 
      struct candidate can;
 
+     int flag = 0;
+     int counter = 0;
+
      while (fread(&can, sizeof(struct candidate), 1, candidateFile))
      {
-          printf("ID: %d\n", can.id);
-          printf("Name: %s\n", can.name);
-          printf("Age: %d\n", can.age);
-          printf("Degree: %s\n", can.degree);
-          printf("Experience: %d\n", can.experience);
-          printf("Skills: %s\n", can.skills);
-          printf("Recommendation Letter: %d\n", can.recomendations);
-          printf("\n");
+          counter++;
+          if(counter > interv.total_emp){
+               flag = 1;
+               printf("\nThe total number of selected candidates is greater than the total number of required employees\n");
+               break;
+          }
+     }
+
+     int choice;
+     if(flag){
+          printf("Enter 1 , If you want to continue\nEnter 2 , If you want to remove candidates");
+          scanf("%d", &choice);
+     }
+
+     if(choice == 1){
+          delete_candidate();
+     }
+
+     else{
+          printf("\nThe Final List\n");
+          struct candidate cand;
+          while (fread(&cand, sizeof(struct candidate), 1, candidateFile))
+          {
+               printf("ID: %d\n", cand.id);
+               printf("Name: %s\n", cand.name);
+               printf("Age: %d\n", cand.age);
+               printf("Degree: %s\n", cand.degree);
+               printf("Experience: %d\n", cand.experience);
+               printf("Skills: %s\n", cand.skills);
+               printf("Recommendation Letter: %d\n", cand.recomendations);
+               printf("\n");
+          }
      }
      fclose(candidateFile);
 }
@@ -496,7 +531,7 @@ void call_menu(struct candidate *can, struct Interview interv, int n)
                add();
                break;
           case 5:
-               get_final_list();
+               get_final_list(interv);
                break;
           case 6:
                return;
