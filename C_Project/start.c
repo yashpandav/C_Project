@@ -448,7 +448,41 @@ void delete_candidate(){
      int id;
      printf("\nEnter The id of the candidate to delete : ");
      scanf("%d", &id);
-     is_available(id);
+
+     FILE *candidate = fopen("candidate.txt", "r");
+     FILE *temp = fopen("temp.txt", "w");
+
+     if(candidate == NULL || temp == NULL) perror("Error opening file");
+     struct candidate can;
+
+     int found = 0;
+
+     while (fread(&can, sizeof(struct candidate), 1, candidate))
+     {
+          if(can.id == id){
+               found = 1;
+          }
+          else{
+               fwrite(&can , sizeof(struct candidate), 1, temp);
+          }
+     }
+
+     if(found == 1) printf("Candidate Successfully deleted");
+     fclose(candidate);
+     fclose(temp);
+
+     candidate = fopen("candidate.txt", "w");
+     temp = fopen("candidate.txt", "r");
+
+     struct candidate tmp;
+
+     while (fread(&tmp, sizeof(struct candidate), 1, temp))
+     {
+          fwrite(&tmp, sizeof(struct candidate), 1, candidate);
+     }
+     fclose(candidate);
+     fclose(temp);
+
 }
 
 void get_final_list(struct Interview interv)
@@ -472,6 +506,12 @@ void get_final_list(struct Interview interv)
           }
      }
 
+     fclose(candidateFile);
+     
+     FILE *candidateFile = fopen("candidate.txt", "r");
+     if (candidateFile == NULL)
+          perror("File could not be opened");
+
      int choice;
      if(flag){
           printf("Enter 1 , If you want to continue\nEnter 2 , If you want to remove candidates");
@@ -480,6 +520,7 @@ void get_final_list(struct Interview interv)
 
      if(choice == 1){
           delete_candidate();
+          get_final_list(interv);
      }
 
      else{
