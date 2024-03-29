@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -508,7 +509,7 @@ void get_final_list(struct Interview interv)
 
      fclose(candidateFile);
      
-     FILE *candidateFile = fopen("candidate.txt", "r");
+     candidateFile = fopen("candidate.txt", "r");
      if (candidateFile == NULL)
           perror("File could not be opened");
 
